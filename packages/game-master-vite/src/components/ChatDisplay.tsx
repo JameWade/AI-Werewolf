@@ -21,11 +21,25 @@ export const ChatDisplay = observer(function ChatDisplay() {
     })
     .filter(speech => speech != null);
   
-  // 调试信息
-  console.log('📋 ChatDisplay - speeches data:', speechesData);
-  console.log('📋 ChatDisplay - flattened speeches:', speeches);
-  console.log('📋 ChatDisplay - speeches length:', speeches.length);
+  // 详细调试信息
+  console.log('=== ChatDisplay 调试信息 ===');
+  console.log('📋 ChatDisplay - 原始speeches数据:', speechesData);
+  console.log('📋 ChatDisplay - 处理后speeches数组:', speeches);
+  console.log('📋 ChatDisplay - speeches长度:', speeches.length);
   console.log('📋 ChatDisplay - gameState:', gameState);
+  console.log('📋 ChatDisplay - 游戏状态:', {
+    hasGameState: !!gameState,
+    playersCount: gameState?.players?.length || 0,
+    currentPhase: gameState?.currentPhase,
+    currentRound: gameState?.round // 使用正确的属性名
+  });
+  
+  // 检查每个speech的有效性
+  speeches.forEach((speech, index) => {
+    if (!speech.content || !speech.playerId) {
+      console.warn(`⚠️ ChatDisplay - 发现无效speech[${index}]:`, speech);
+    }
+  });
 
   const getPlayerRole = (playerId: number): Role | null => {
     if (!gameState) return null;
@@ -78,15 +92,30 @@ export const ChatDisplay = observer(function ChatDisplay() {
             .map((speech, index) => {
               const role = getPlayerRole(speech.playerId);
               const messageStyle = getMessageStyle();
-              console.log('ChatDisplay111 - speech:', speech);
+              
+              // 为每个发言添加详细调试
+              console.log(`💬 ChatDisplay - 渲染speech[${index}]:`, {
+                speech,
+                role,
+                isSystem: speech.type === 'system',
+                isPlayer: speech.type === 'player' || !speech.type,
+                hasContent: !!speech.content,
+                contentLength: speech.content?.length || 0
+              });
               
               return (
                 <div
-                  key={`${speech.playerId}-${index}`}
+                  key={`${speech.playerId}-${index}-${speech.content?.slice(0, 10) || 'empty'}`}
                   className={clsx(
                     'rounded-lg p-3 transition-all duration-200',
-                    'hover:shadow-sm',
-                    messageStyle
+                    'hover:shadow-sm border-l-4',
+                    messageStyle,
+                    {
+                      'border-l-blue-500': speech.type === 'system',
+                      'border-l-green-500': speech.type === 'player' || !speech.type,
+                      'bg-blue-50': speech.type === 'system',
+                      'bg-green-50': speech.type === 'player' || !speech.type
+                    }
                   )}
                 >
                   <div className="flex justify-between items-start mb-1">
@@ -122,8 +151,15 @@ export const ChatDisplay = observer(function ChatDisplay() {
                     </span>
                   </div>
                   <div className="text-sm text-foreground leading-relaxed mt-1">
-                    {speech.content}
+                    {speech.content || '无内容'}
                   </div>
+                  
+                  {/* 调试信息（仅在开发环境显示） */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <div className="text-xs text-gray-400 mt-1 border-t pt-1">
+                      Debug: Player#{speech.playerId}, Type: {speech.type || 'player'}, Role: {role || 'unknown'}
+                    </div>
+                  )}
                 </div>
               );
             })

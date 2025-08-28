@@ -29,6 +29,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:packages": "bun run --filter '*' test",
+    "test:api": "bun run scripts/test-api.ts",
+    "check:servers": "bun run scripts/check-servers.ts",
     "lint": "bun run --filter '*' lint",
     "typecheck": "bunx tsc --build",
     "typecheck:watch": "bunx tsc --build --watch",

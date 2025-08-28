@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 import { GameConsole } from '@/components/GameConsole';
+import { APILogDisplay } from '@/components/APILogDisplay';
 import './globals.css';
 
 function App() {
@@ -25,6 +26,9 @@ function App() {
       
       <main className="container mx-auto px-6 py-8 max-w-[90rem]">
         <GameConsole />
+        
+        {/* API日志显示组件 */}
+        <APILogDisplay />
       </main>
     </div>
   );

@@ -119,7 +119,38 @@ ${potionInfo}
 - 如果毒人，poisonTarget设为目标玩家的ID
 - 如果都不使用，action设为'idle'，两个target都设为0
 - 请为每个决定提供详细的理由（healReason和poisonReason）
-- 第1轮夜间时，你的决策理由应该基于：被杀玩家的身份、药水的战略价值、随机性等，而不是基于不存在的"白天发言"`;
+- 第1轮夜间时，你的决策理由应该基于：被杀玩家的身份、药水的战略价值、随机性等，而不是基于不存在的"白天发言"
+
+**重要**：必须严格按照以下JSON格式响应，不要包含任何其他文字：
+
+示例1（救人不毒人）：
+{
+  "action": "using",
+  "healTarget": 4,
+  "healReason": "第一夜被杀的玩家可能是重要角色，值得救治",
+  "poisonTarget": 0,
+  "poisonReason": "第一夜信息不足，暂不使用毒药"
+}
+
+示例2（不救人但毒人）：
+{
+  "action": "using",
+  "healTarget": 0,
+  "healReason": "解药已用或策略性保留",
+  "poisonTarget": 3,
+  "poisonReason": "基于位置和直觉判断该玩家可疑"
+}
+
+示例3（什么都不做）：
+{
+  "action": "idle",
+  "healTarget": 0,
+  "healReason": "第一夜选择观察，保留药水",
+  "poisonTarget": 0,
+  "poisonReason": "第一夜信息不足，不冒险使用毒药"
+}
+
+请严格按照上述JSON格式输出你的决策，不要包含任何解释文字或额外内容。`;
 }
 
 export function getGuardNightAction(playerServer: PlayerServer, context: PlayerContext): string {

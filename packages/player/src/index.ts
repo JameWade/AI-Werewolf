@@ -157,7 +157,9 @@ app.post('/api/player/use-ability', async (req, res) => {
     // 直接使用类型，不验证输入 (可能是 PlayerContext, WitchContext, 或 SeerContext)
     const context: PlayerContext | WitchContext | SeerContext = req.body;
     
+    console.log(`🌙 [API] 尝试调用 playerServer.useAbility()...`);
     const result = await playerServer.useAbility(context);
+    console.log(`✅ [API] playerServer.useAbility() 成功返回:`, JSON.stringify(result, null, 2));
     
     // 刷新Langfuse数据
     await flushLangfuseData();
@@ -169,7 +171,16 @@ app.post('/api/player/use-ability', async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('Use ability error:', error);
-    res.status(500).json({ error: 'Failed to use ability' });
+    console.error(`❌ [API] 错误详情:`, {
+      message: error instanceof Error ? error.message : '未知错误',
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
+    res.status(500).json({ 
+      error: 'Failed to use ability',
+      details: error instanceof Error ? error.message : '未知错误',
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
@@ -178,7 +189,9 @@ app.post('/api/player/last-words', async (req, res) => {
     console.log('\n=== LAST WORDS REQUEST ===');
     console.log('Request body:', JSON.stringify(req.body, null, 2));
     
-    const lastWords = await playerServer.lastWords();
+    // 支持带参数的遗言生成
+    const lastWordsParams = req.body.lastWordsParams || undefined;
+    const lastWords = await playerServer.lastWords(lastWordsParams);
     
     // 刷新Langfuse数据
     await flushLangfuseData();
@@ -198,7 +211,29 @@ app.post('/api/player/last-words', async (req, res) => {
   }
 });
 
-app.post('/api/player/status', (_req, res) => {
+// 狼人交流API端点
+app.post('/api/player/werewolf-communicate', async (req, res) => {
+  try {
+    console.log('\n=== WEREWOLF COMMUNICATION REQUEST ===');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    
+    const context: PlayerContext = req.body;
+    const communication = await playerServer.werewolfCommunicate(context);
+    
+    // 刷新Langfuse数据
+    await flushLangfuseData();
+    
+    console.log('Response:', JSON.stringify(communication, null, 2));
+    console.log('=== END WEREWOLF COMMUNICATION REQUEST ===\n');
+    
+    res.json(communication);
+  } catch (error) {
+    console.error('Werewolf communication error:', error);
+    res.status(500).json({ error: 'Failed to generate werewolf communication' });
+  }
+});
+
+app.get('/api/player/status', (_req, res) => {
   try {
     const status = playerServer.getStatus();
     const validatedStatus = status; // 不需要validation，直接返回status对象
@@ -213,11 +248,49 @@ app.post('/api/player/status', (_req, res) => {
   }
 });
 
-app.listen(port, host, () => {
-  console.log(`🚀 Player server running on ${host}:${port}`);
-  if (configPath) {
-    console.log(`📋 使用配置文件: ${configPath}`);
+const server = app.listen(port, host, () => {
+  console.log('\n🎮 =================================');
+  console.log('🤖 AI狼人杀玩家服务器启动成功!');
+  console.log('🎮 =================================');
+  console.log(`📡 服务器地址: http://${host}:${port}`);
+  console.log(`🎯 状态检查: http://${host}:${port}/api/player/status`);
+  console.log(`🗣️ 发言接口: http://${host}:${port}/api/player/speak`);
+  console.log(`🗳️ 投票接口: http://${host}:${port}/api/player/vote`);
+  console.log(`🌙 能力接口: http://${host}:${port}/api/player/use-ability`);
+  console.log(`🎮 开始游戏: http://${host}:${port}/api/player/start-game`);
+  console.log('🎮 =================================');
+  console.log(`⚙️ 配置文件: ${configPath || '默认配置'}`);
+  console.log(`🤖 AI模型: ${config.ai.model}`);
+  console.log(`🔑 API密钥: ${config.ai.apiKey ? '已配置' : '未配置'}`);
+  console.log(`📝 日志: ${config.logging.enabled ? '已启用' : '已禁用'}`);
+  console.log('🎮 =================================\n');
+});
+
+// 服务器错误处理
+server.on('error', (error: any) => {
+  console.error('\n❌ =================================');
+  console.error('❌ 服务器启动失败!');
+  console.error('❌ =================================');
+  
+  if (error.code === 'EADDRINUSE') {
+    console.error(`💥 端口 ${port} 已被占用!`);
+    console.log('\n💡 解决方案:');
+    console.log(`   1. 检查是否有其他程序使用端口 ${port}`);
+    console.log(`   2. 修改配置文件中的端口号`);
+    console.log(`   3. 停止占用端口的程序`);
+    console.log(`   4. 使用命令: netstat -ano | findstr :${port}`);
+  } else if (error.code === 'EACCES') {
+    console.error(`🔒 权限不足，无法绑定端口 ${port}`);
+    console.log('\n💡 解决方案:');
+    console.log('   1. 尝试使用其他端口 (>1024)');
+    console.log('   2. 以管理员权限运行');
+  } else {
+    console.error(`💭 未知错误: ${error.code}`);
+    console.error(`🔍 错误详情:`, error);
   }
+  
+  console.error('❌ =================================\n');
+  process.exit(1);
 });
 
 // 优雅关闭处理，确保 Langfuse 数据被正确刷新
