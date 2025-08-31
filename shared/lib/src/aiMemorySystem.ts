@@ -1,13 +1,13 @@
 import { 
   Role, 
-  PlayerInfo, 
-  Speech, 
-  Vote, 
+  type PlayerInfo, 
+  type Speech, 
+  type Vote, 
   GamePhase,
-  AllSpeeches,
-  AllVotes,
-  PlayerId,
-  Round
+  type AllSpeeches,
+  type AllVotes,
+  type PlayerId,
+  type  Round
 } from '@ai-werewolf/types';
 
 /**
