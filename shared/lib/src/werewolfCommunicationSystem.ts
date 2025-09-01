@@ -107,7 +107,6 @@ export class WerewolfCommunicationSystem {
     // 分析所有建议
     const targetAnalysis = this.analyzeTargetSuggestions(
       memberSuggestions,
-      context
     );
 
     // 生成团队决策
@@ -142,7 +141,6 @@ export class WerewolfCommunicationSystem {
       const strategy = this.generateIndividualStrategy(
         werewolfId,
         context,
-        teamDecision
       );
       strategies.set(werewolfId, strategy);
     }
@@ -190,7 +188,7 @@ export class WerewolfCommunicationSystem {
     this.messages = this.messages.filter(msg => currentRound - msg.round <= 3);
     
     // 更新历史记录
-    for (const [round] of this.communicationHistory) {
+    for (const [round, _] of this.communicationHistory) {
       if (currentRound - round > 3) {
         this.communicationHistory.delete(round);
       }
@@ -235,7 +233,7 @@ export class WerewolfCommunicationSystem {
     };
 
     // 分析发言寻找神职角色
-    for (const [ speeches] of Object.entries(allSpeeches)) {
+    for (const [_, speeches] of Object.entries(allSpeeches)) {
       for (const speech of speeches) {
         if (context.werewolfTeam.includes(speech.playerId)) continue;
 
@@ -268,7 +266,7 @@ export class WerewolfCommunicationSystem {
     }
 
     // 分析投票模式
-    for (const [ votes] of Object.entries(allVotes)) {
+    for (const [_, votes] of Object.entries(allVotes)) {
       for (const vote of votes) {
         if (context.werewolfTeam.includes(vote.targetId)) {
           if (!analysis.suspiciousPlayers.includes(vote.voterId)) {
@@ -379,7 +377,7 @@ export class WerewolfCommunicationSystem {
     }
 
     // 评估风险级别
-    for (const [ data] of analysis) {
+    for (const [_, data] of analysis) {
       // 简单的风险评估：神职角色风险低，怀疑者风险高
       if (data.reasons.some((r: string) => r.includes('神职') || r.includes('预言家') || r.includes('女巫'))) {
         data.riskLevel = 0.3; // 低风险
