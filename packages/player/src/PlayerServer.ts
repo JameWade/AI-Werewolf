@@ -151,7 +151,7 @@ export class PlayerServer {
 
     // 使用AI记忆系统进行角色推断和威胁评估
     if (this.aiMemory) {
-      this.aiMemory.deduceRoles(context.alivePlayers, context.allSpeeches, context.allVotes);
+      this.aiMemory.deduceRoles(context.alivePlayers, context.allSpeeches);
     }
 
     return await this.generateVote(context);

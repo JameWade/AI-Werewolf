@@ -78,8 +78,6 @@ export class WerewolfCommunicationSystem {
     
     // 根据分析生成交流内容
     const communication = this.generateCommunicationContent(
-      senderId,
-      context,
       gameAnalysis
     );
 
@@ -192,7 +190,7 @@ export class WerewolfCommunicationSystem {
     this.messages = this.messages.filter(msg => currentRound - msg.round <= 3);
     
     // 更新历史记录
-    for (const [round, messages] of this.communicationHistory) {
+    for (const [round] of this.communicationHistory) {
       if (currentRound - round > 3) {
         this.communicationHistory.delete(round);
       }
@@ -237,7 +235,7 @@ export class WerewolfCommunicationSystem {
     };
 
     // 分析发言寻找神职角色
-    for (const [round, speeches] of Object.entries(allSpeeches)) {
+    for (const [ speeches] of Object.entries(allSpeeches)) {
       for (const speech of speeches) {
         if (context.werewolfTeam.includes(speech.playerId)) continue;
 
@@ -270,7 +268,7 @@ export class WerewolfCommunicationSystem {
     }
 
     // 分析投票模式
-    for (const [round, votes] of Object.entries(allVotes)) {
+    for (const [ votes] of Object.entries(allVotes)) {
       for (const vote of votes) {
         if (context.werewolfTeam.includes(vote.targetId)) {
           if (!analysis.suspiciousPlayers.includes(vote.voterId)) {
@@ -294,8 +292,6 @@ export class WerewolfCommunicationSystem {
   }
 
   private generateCommunicationContent(
-    senderId: PlayerId,
-    context: WerewolfCommunicationContext,
     gameAnalysis: any
   ): {
     messageType: 'strategy' | 'target_suggestion' | 'information' | 'coordination';
@@ -355,7 +351,6 @@ export class WerewolfCommunicationSystem {
       reason: string;
       priority: number;
     }>,
-    context: WerewolfCommunicationContext
   ): Map<PlayerId, {
     votes: number;
     totalPriority: number;
@@ -384,7 +379,7 @@ export class WerewolfCommunicationSystem {
     }
 
     // 评估风险级别
-    for (const [target, data] of analysis) {
+    for (const [ data] of analysis) {
       // 简单的风险评估：神职角色风险低，怀疑者风险高
       if (data.reasons.some((r: string) => r.includes('神职') || r.includes('预言家') || r.includes('女巫'))) {
         data.riskLevel = 0.3; // 低风险
@@ -436,7 +431,6 @@ export class WerewolfCommunicationSystem {
   private generateIndividualStrategy(
     werewolfId: PlayerId,
     context: WerewolfCommunicationContext,
-    teamDecision: WerewolfTeamDecision
   ): {
     speechStrategy: string;
     votingStrategy: string;

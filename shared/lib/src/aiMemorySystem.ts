@@ -56,7 +56,6 @@ export interface StrategyMemory {
 export class AIMemorySystem {
   private memories: AIMemoryEntry[] = [];
   private playerProfiles: Map<PlayerId, PlayerProfile> = new Map();
-  private strategyMemories: StrategyMemory[] = [];
   private gameContext: {
     myRole: Role;
     myPlayerId: PlayerId;
@@ -86,11 +85,11 @@ export class AIMemorySystem {
   /**
    * 分析发言并存储记忆
    */
-  analyzeSpeech(speech: Speech, allSpeeches: AllSpeeches, alivePlayers: PlayerInfo[]): void {
+  analyzeSpeech(speech: Speech, allSpeeches: AllSpeeches): void {
     const playerId = speech.playerId;
     
     // 分析发言内容
-    const analysis = this.extractSpeechInsights(speech, allSpeeches);
+    const analysis = this.extractSpeechInsights(speech);
     
     // 存储发言分析记忆
     this.addMemory({
@@ -103,7 +102,7 @@ export class AIMemorySystem {
     });
 
     // 更新玩家档案
-    this.updatePlayerProfile(playerId, analysis, alivePlayers);
+    this.updatePlayerProfile(playerId, analysis);
 
     // 检测矛盾
     const contradictions = this.detectContradictions(playerId, speech, allSpeeches);
@@ -122,8 +121,8 @@ export class AIMemorySystem {
   /**
    * 分析投票模式
    */
-  analyzeVotingPattern(votes: Vote[], allVotes: AllVotes, alivePlayers: PlayerInfo[]): void {
-    const patterns = this.extractVotingPatterns(votes, allVotes);
+  analyzeVotingPattern( allVotes: AllVotes): void {
+    const patterns = this.extractVotingPatterns( allVotes);
     
     for (const pattern of patterns) {
       this.addMemory({
@@ -140,13 +139,13 @@ export class AIMemorySystem {
   /**
    * 进行角色推断
    */
-  deduceRoles(alivePlayers: PlayerInfo[], allSpeeches: AllSpeeches, allVotes: AllVotes): Map<PlayerId, { role: Role; confidence: number }> {
+  deduceRoles(alivePlayers: PlayerInfo[], allSpeeches: AllSpeeches): Map<PlayerId, { role: Role; confidence: number }> {
     const roleDeductions = new Map<PlayerId, { role: Role; confidence: number }>();
     
     for (const player of alivePlayers) {
       if (player.id === this.gameContext.myPlayerId) continue;
       
-      const deduction = this.analyzePlayerRole(player.id, allSpeeches, allVotes);
+      const deduction = this.analyzePlayerRole(player.id, allSpeeches);
       if (deduction.confidence > 0.3) {
         roleDeductions.set(player.id, deduction);
         
@@ -168,19 +167,12 @@ export class AIMemorySystem {
    * 生成策略建议
    */
   generateStrategy(
-    context: {
-      currentPhase: GamePhase;
-      alivePlayers: PlayerInfo[];
-      allSpeeches: AllSpeeches;
-      allVotes: AllVotes;
-    }
   ): {
     primaryStrategy: string;
     reasoning: string;
     targetPlayers: PlayerId[];
     riskLevel: 'low' | 'medium' | 'high';
   } {
-    const relevantMemories = this.getRelevantMemories(context.currentPhase);
     const playerAnalysis = this.getPlayerAnalysis();
     
     let strategy: any = {
@@ -191,13 +183,13 @@ export class AIMemorySystem {
     };
 
     if (this.gameContext.myRole === Role.WEREWOLF) {
-      strategy = this.generateWerewolfStrategy(context, relevantMemories, playerAnalysis);
+      strategy = this.generateWerewolfStrategy(playerAnalysis);
     } else if (this.gameContext.myRole === Role.SEER) {
-      strategy = this.generateSeerStrategy(context, relevantMemories, playerAnalysis);
+      strategy = this.generateSeerStrategy( playerAnalysis);
     } else if (this.gameContext.myRole === Role.WITCH) {
-      strategy = this.generateWitchStrategy(context, relevantMemories, playerAnalysis);
+      strategy = this.generateWitchStrategy( );
     } else {
-      strategy = this.generateVillagerStrategy(context, relevantMemories, playerAnalysis);
+      strategy = this.generateVillagerStrategy(playerAnalysis);
     }
 
     // 存储策略记忆
@@ -298,7 +290,7 @@ export class AIMemorySystem {
     }
   }
 
-  private extractSpeechInsights(speech: Speech, allSpeeches: AllSpeeches): {
+  private extractSpeechInsights(speech: Speech): {
     summary: string;
     confidence: number;
     keywords: string[];
@@ -338,7 +330,7 @@ export class AIMemorySystem {
     return { summary, confidence: Math.min(confidence, 1.0), keywords };
   }
 
-  private updatePlayerProfile(playerId: PlayerId, analysis: any, alivePlayers: PlayerInfo[]): void {
+  private updatePlayerProfile(playerId: PlayerId, analysis: any): void {
     let profile = this.playerProfiles.get(playerId);
     
     if (!profile) {
@@ -396,7 +388,7 @@ export class AIMemorySystem {
     return contradictions;
   }
 
-  private extractVotingPatterns(votes: Vote[], allVotes: AllVotes): Array<{
+  private extractVotingPatterns( allVotes: AllVotes): Array<{
     playerId: PlayerId;
     description: string;
     confidence: number;
@@ -462,7 +454,7 @@ export class AIMemorySystem {
     return followCount > playerVotes.length * 0.6;
   }
 
-  private analyzePlayerRole(playerId: PlayerId, allSpeeches: AllSpeeches, allVotes: AllVotes): {
+  private analyzePlayerRole(playerId: PlayerId, allSpeeches: AllSpeeches): {
     role: Role;
     confidence: number;
   } {
@@ -520,23 +512,13 @@ export class AIMemorySystem {
     };
   }
 
-  private getRelevantMemories(phase: GamePhase): AIMemoryEntry[] {
-    return this.memories
-      .filter(m => {
-        // 获取最近几轮的记忆
-        if (this.gameContext.currentRound - m.round > 3) return false;
-        
-        // 高相关度和置信度的记忆
-        return m.relevance > 0.5 && m.confidence > 0.4;
-      })
-      .sort((a, b) => (b.relevance * b.confidence) - (a.relevance * a.confidence));
-  }
+
 
   private getPlayerAnalysis(): Map<PlayerId, PlayerProfile> {
     return this.playerProfiles;
   }
 
-  private generateWerewolfStrategy(context: any, memories: AIMemoryEntry[], players: Map<PlayerId, PlayerProfile>) {
+  private generateWerewolfStrategy( players: Map<PlayerId, PlayerProfile>) {
     return {
       primaryStrategy: '伪装村民，寻找神职目标',
       reasoning: '作为狼人需要隐藏身份并消除威胁',
@@ -547,7 +529,7 @@ export class AIMemorySystem {
     };
   }
 
-  private generateSeerStrategy(context: any, memories: AIMemoryEntry[], players: Map<PlayerId, PlayerProfile>) {
+  private generateSeerStrategy( players: Map<PlayerId, PlayerProfile>) {
     return {
       primaryStrategy: '适时公布查验结果，引导投票',
       reasoning: '作为预言家需要在保护自己的同时传达信息',
@@ -558,7 +540,7 @@ export class AIMemorySystem {
     };
   }
 
-  private generateWitchStrategy(context: any, memories: AIMemoryEntry[], players: Map<PlayerId, PlayerProfile>) {
+  private generateWitchStrategy() {
     return {
       primaryStrategy: '隐藏身份，关键时刻使用药水',
       reasoning: '作为女巫需要在合适时机使用能力',
@@ -567,7 +549,7 @@ export class AIMemorySystem {
     };
   }
 
-  private generateVillagerStrategy(context: any, memories: AIMemoryEntry[], players: Map<PlayerId, PlayerProfile>) {
+  private generateVillagerStrategy( players: Map<PlayerId, PlayerProfile>) {
     return {
       primaryStrategy: '分析发言，寻找逻辑漏洞',
       reasoning: '作为村民需要通过逻辑分析找出狼人',
